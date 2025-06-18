@@ -1,0 +1,6 @@
+config.json
+data/
+results.json
+*.csv
+*.json_pycache__/
+.env
