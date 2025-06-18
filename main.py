@@ -14,6 +14,7 @@ with open('config.json') as f:
 
 api_key = config["APCA_API_KEY_ID"]
 api_secret = config["APCA_API_SECRET_KEY"]
+alpha_key = config["ALPHAVANTAGE_API_KEY"]
 
 base_url = 'https://paper-api.alpaca.markets'
 
@@ -21,7 +22,7 @@ api = tradeapi.REST(api_key, api_secret, base_url,
 api_version='v2')
 
 def meanRev(prcs, ticker): # pass in a list of prices and the ticker for the trade
-    reversed(prcs) #make the last day in the list the current day
+    prcs = list(reversed(prcs)) #make the last day in the list the current day
     buy = 0
     profit = 0
     start=time.time()
@@ -87,7 +88,7 @@ def meanRev(prcs, ticker): # pass in a list of prices and the ticker for the tra
         f.write('\n')
     
 def simpleMoving(prcs,ticker):
-    reversed(prcs)
+    prcs = list(reversed(prcs))
     buy = 0
     profit = 0
     start=time.time()
@@ -153,7 +154,7 @@ def simpleMoving(prcs,ticker):
         
         
 def bollinger(prcs,ticker):
-    reversed(prcs)
+    prcs = list(reversed(prcs))
     start=time.time()
     days = 5
     i = 0
@@ -258,8 +259,8 @@ ticker = ['IBM','KO','MSFT']#,'AMZN','ABNB','ADBE','TSLA','AMC', 'ZI','DIS']# ti
 
 for tick in ticker: #loop through tickers
 
-    url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol='+tick+'&outputsize=full&apikey=KP79NZ9ITS60M0LM'#pull historical data from alpaca
-    
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={tick}&outputsize=full&apikey={alpha_key}'#pull historical data from alpaca
+
     request = requests.get(url) #create a request object
    
     stockDict = json.loads(request.text) #converts url to a python dictionary
@@ -273,8 +274,9 @@ for tick in ticker: #loop through tickers
     
     if check_file == True: #if the file path exists then append new data
 
-        csv_file = open(existFile, 'r')#opens the file path in read mode
-        lines = csv_file.readlines()#creates a list
+        with open(existFile, 'r') as csv_file:
+            lines = csv_file.readlines()
+
         last_date = lines[-1].split(",")[0] # gets the last date of our current data
     
         new_lines = []
@@ -286,29 +288,28 @@ for tick in ticker: #loop through tickers
             
         new_lines = new_lines[::-1]
         
-        csv_file = open(existFile, 'a')
-        csv_file.writelines(new_lines)
-        csv_file.close()
+        with open(existFile, 'a') as csv_file:
+            csv_file.writelines(new_lines)
+
      
-        mycsv_file = open('/home/ubuntu/environment/final_project/data/'+tick + '.csv', 'r')#opens the file path in read mode
-        lines = mycsv_file.readlines()[1:] #creates a list starting from the second line of the list
+        with open('/home/ubuntu/environment/final_project/data/'+tick + '.csv', 'r') as mycsv_file:
+            lines = mycsv_file.readlines()[1:]
+
         
         for line in lines:#iterates through the lines
             newPrice = float(line.split(",")[1].strip()) #retrieves the price
             prcs.append(newPrice) #appends the price to the prcs list
 
     else: #if it's a new file path
-        fil = open('/home/ubuntu/environment/final_project/data/'+tick + '.csv', 'w') #write the new file path
-        fil.write("Date,prices\n") #create the headers in line one
+        with open('/home/ubuntu/environment/final_project/data/'+tick + '.csv', 'w') as fil:
+            fil.write("Date,prices\n")
         
-        for date in reversed(list(stockDict[key1].keys())):#iterate through the dates
-            newPrice = float(stockDict[key1][date][key3]) #retrieve the price value
-            prcs.append(newPrice) #appends the prices to the prcs list
-     
-            fil.write(date + "," + stockDict[key1][date][key3] + "\n")#writes the dates and the prices to the new file
-    
-        fil.close() #closes the file
-    
+            for date in reversed(list(stockDict[key1].keys())):#iterate through the dates
+                newPrice = float(stockDict[key1][date][key3]) #retrieve the price value
+                prcs.append(newPrice) #appends the prices to the prcs list
+        
+                fil.write(date + "," + stockDict[key1][date][key3] + "\n")#writes the dates and the prices to the new file
+        
     print("This is the mean reversion strategy for "+tick)
     meanRev(prcs,tick)
     print("\n")

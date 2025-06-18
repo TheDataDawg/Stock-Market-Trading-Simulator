@@ -1,6 +1,7 @@
 config.json
-data/
-results.json
+__pycache__/
+*.pyc
+*.log
 *.csv
-*.json_pycache__/
-.env
+*.json
+/home/ubuntu/environment/final_project/data/.DS_Store
